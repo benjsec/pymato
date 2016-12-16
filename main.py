@@ -1,7 +1,6 @@
 import collections
 import curses
 # import logging
-import math
 import subprocess
 import time
 
@@ -54,11 +53,11 @@ class Timer:
 
     def end_phase(self):
         self.ding()
-        self.win.cls()
+        self.win.clear()
         self.disp_phase("End of {} phase", self.current_phase)
         self.disp_time("Press any key to begin next phase.")
         self.wait_forever()
-        self.win.cls()
+        self.win.clear()
 
     def disp_phase(self, fmt, *args):
         self.win.addstr(0, 2, fmt.format(*args).ljust(self.maxx))
@@ -95,8 +94,8 @@ class Timer:
             raise ValueError(
                 "Length of phase must be positive, got {}".format(length))
         for i in range(length, 0, -1):
-            m, s = math.floor(i/60), int(i%60)
-            self.disp_time("Time remaining: {:0>2}:{:0>2}", m, s)
+            self.disp_time("Time remaining: {}",
+                time.strftime("%M:%S", time.gmtime(i)))
             key = self.get_key()
             if key == 'q':  # Quit completely
                 raise ExitException
