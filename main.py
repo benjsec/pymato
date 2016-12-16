@@ -31,7 +31,7 @@ class Timer:
 
     SECOND = 1000
 
-    def __init__(self, stdscr, phases=None):
+    def __init__(self, stdscr):
         self.stdscr = stdscr
         self.stdscr.timeout(self.SECOND)
         self.phases = []
@@ -79,7 +79,7 @@ class Timer:
         self.time(phase.duration)
 
     def pause(self):
-        self.disp_time("Timer paused, press SPACE to resume.")
+        self.disp_time("Timer paused, press any key to resume.")
         self.wait_forever()
 
     def get_key(self):
@@ -97,15 +97,12 @@ class Timer:
         for i in range(length, 0, -1):
             m, s = math.floor(i/60), int(i%60)
             self.disp_time("Time remaining: {:0>2}:{:0>2}", m, s)
-            # self.win.addstr(
-            #     2, 0, "Time remaining: {:0>2}:{:0>2}".format(m, s).ljust(80))
-            # self.win.refresh()
             key = self.get_key()
-            if key == 'q':
+            if key == 'q':  # Quit completely
                 raise ExitException
-            elif key == 's':
+            elif key == 's':  # Skip phase
                 break
-            elif key == ' ':
+            elif key == ' ':  # Pause
                 self.pause()
         else:
             self.end_phase()
