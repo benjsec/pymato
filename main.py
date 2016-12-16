@@ -25,7 +25,8 @@ class Timer:
         self.phases = phases or []
         self.current_phase = None
         self.stdscr.addstr(0, 0, " ~~ Pymato Timer ~~ ")
-        # self.stdscr.addstr(-1, 0, "Instructions go here")
+        maxy, maxx = stdscr.getmaxyx()
+        self.stdscr.addstr(maxy-1, 0, "Space: Pause\t s: Skip phase\t q: Quit")
 
     def ding(self):
         p = subprocess.PIPE
@@ -60,11 +61,9 @@ class Timer:
         self.time(phase.duration)
 
     def pause(self):
-        self.stdscr.addstr(
-                4, 0, "Timer paused".ljust(80))
+        self.stdscr.addstr(4, 0, "Timer paused".ljust(80))
         self.stdscr.refresh()
         self.wait_forever()
-
 
     def time(self, length):
         if length < 0:
@@ -76,7 +75,7 @@ class Timer:
                 4, 0, "Time remaining: {:0>2}:{:0>2}".format(m, s).ljust(80))
             self.stdscr.refresh()
             try:
-                key = self.stdscr.getkey()
+                key = self.stdscr.getkey().lower()
             except curses.error:
                 pass
             else:
