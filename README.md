@@ -8,6 +8,9 @@ being used up whilst you just finish a little bit of work (or vice versa).
 
 It is written in python 3.5 and uses only the standard libraries.
 
+Development requirements:
+    * Pytest
+
 ## Controls
 
 Whilst the timer is running the following controls can be used:
@@ -41,11 +44,13 @@ included to enable auto advancing between phases.
 
 ### Dynamic UI
 
-Currently the UI will not dynamically resize itself if the console is resized.
-This means that if the consoles original height is reduced at any time, the
-control hints will not be shown until the timer is restarted. There may also
-be issues with the display if the console is too small, which needs to be
-investigated.
+* ~~UI should resize when the window is resized~~
+* Control hints should hide when not relevant (e.g. between phases)
+* Quit (q) should still work between phases (and hint should show).
+* Crashing the program should not mess up the terminal (it does a bit at the 
+    moment).
+* Handle display-too-small scenario
+
 
 ### Desktop notifications
 
