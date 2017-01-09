@@ -12,9 +12,9 @@ It is written in python 3.5 and uses only the standard libraries.
 
 Whilst the timer is running the following controls can be used:
 
-    * **SPACE** This will pause the timer, pressing any key will resume it.
-    * **s** Skip the current phase and being the next phase immediately.
-    * **q** Exit the timer.
+* `SPACE` This will pause the timer, pressing any key will resume it.
+* `s` Skip the current phase and being the next phase immediately.
+* `q` Exit the timer.
 
 
 ## Development requirements:
