@@ -26,28 +26,108 @@ class ExitException(Exception):
     """Exception to raise when exiting nicely"""
 
 
+class Window:
+
+    SECOND = 1000
+
+    def __init__(self):
+        self._phase = ""
+        self._time = ""
+        self.scr = None
+
+    def __enter__(self):
+        self.scr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        self.scr.keypad(True)
+        self.scr.timeout(self.SECOND)
+        self.win = self.scr.subwin(3, 0)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.scr.keypad(False)
+        self.restore()
+
+    @staticmethod
+    def restore():
+        try:
+            curses.nocbreak()
+            curses.echo()
+            curses.endwin()
+        except curses.error:
+            pass
+
+    @property
+    def maxx(self):
+        return self.scr.getmaxyx()[1]
+
+    @property
+    def maxy(self):
+        return self.scr.getmaxyx()[0]
+
+    def draw(self):
+        """Refresh the display using currently set parameters."""
+        self.scr.clear()
+        self.scr.addstr(0, 0, " ~~ Pymato Timer ~~ ".center(self.maxx))
+        self.scr.addstr(self.maxy-1, 2,
+                           "Space: Pause\t s: Skip phase\t q: Quit")
+        self.win.addstr(0, 2, self._phase.ljust(self.maxx))
+        self.win.addstr(2, 2, self._time.ljust(self.maxx))
+        self.scr.refresh()
+
+    def phase(self, fmt, *args):
+        """Update the line where the current phase is displayed.
+
+        :param fmt: A string format specification
+        :param args: Any arguments needed for the string formatting.
+        """
+        self._phase = fmt.format(*args)
+        self.draw()
+
+    def time(self, fmt, *args):
+        """Update the line where the time remaining is displayed.
+
+        :param fmt: A string format specification
+        :param args: Any arguments needed for the string formatting.
+        """
+        self._time = fmt.format(*args)
+        self.draw()
+
+    def wait(self, timeout=-1):
+        """Wait until a key is pressed, or timeout, and return the key.
+
+        :param timeout: Time to wait for a key press in milliseconds. If not
+            given or -1 will wait forever.
+        :returns: The key pressed, or `None` if no key was pressed.
+        """
+        self.scr.timeout(timeout)
+        try:
+            key = self.scr.getkey()
+        except curses.error:
+            key = None
+        else:
+            key = key.lower()
+        finally:
+            self.scr.timeout(self.SECOND)
+        return key
+
+
+
 class Timer:
     """A timer class that encapuslates the main functionality of the program.
 
     :param stdscr: The curses screen to display updates on.
     """
 
-
     # Currently the seconds are measured by waiting for the key presses, this
     # may want to be updated to look at start and end time... but for now this
     # works well enough.
     SECOND = 1000
 
-    def __init__(self, stdscr):
-        self.stdscr = stdscr
-        self.stdscr.timeout(self.SECOND)
+    def __init__(self, win):
+        self.win = win
         self.phases = []
         self.current_phase = None
-        self.maxy, self.maxx = stdscr.getmaxyx()
-        self.stdscr.addstr(0, 0, " ~~ Pymato Timer ~~ ".center(self.maxx))
-        self.stdscr.addstr(self.maxy-1, 2,
-                           "Space: Pause\t s: Skip phase\t q: Quit")
-        self.win = self.stdscr.subwin(3, 0)
 
     def ding(self):
         """Make a "ding" noise"""
@@ -72,47 +152,9 @@ class Timer:
         a key to be pressed before continuing.
         """
         self.ding()
-        self.win.clear()
-        self.disp_phase("End of {} phase", self.current_phase)
-        self.disp_time("Press any key to begin next phase.")
-        self.wait()
-        self.win.clear()
-
-    def disp_phase(self, fmt, *args):
-        """Update the line where the current phase is displayed.
-
-        :param fmt: A string format specification
-        :param args: Any arguments needed for the string formatting.
-        """
-        self.win.addstr(0, 2, fmt.format(*args).ljust(self.maxx))
-        self.win.refresh()
-
-    def disp_time(self, fmt, *args):
-        """Update the line where the time remaining is displayed.
-
-        :param fmt: A string format specification
-        :param args: Any arguments needed for the string formatting.
-        """
-        self.win.addstr(2, 2, fmt.format(*args).ljust(self.maxx))
-        self.win.refresh()
-
-    def wait(self, timeout=-1):
-        """Wait until a key is pressed, or timeout, and return the key.
-
-        :param timeout: Time to wait for a key press in milliseconds. If not
-            given or -1 will wait forever.
-        :returns: The key pressed, or `None` if no key was pressed.
-        """
-        self.stdscr.timeout(timeout)
-        try:
-            key = self.stdscr.getkey()
-        except curses.error:
-            key = None
-        else:
-            key = key.lower()
-        finally:
-            self.stdscr.timeout(self.SECOND)
-        return key
+        self.win.phase("End of {} phase", self.current_phase)
+        self.win.time("Press any key to begin next phase.")
+        self.win.wait()
 
     def period(self, phase):
         """Begin a new phase period.
@@ -121,13 +163,14 @@ class Timer:
             `Phase` object.
         """
         self.current_phase = phase.name
-        self.disp_phase("You should currently be {}", phase.name)
+        # self.win.disp_phase("You should currently be {}", phase.name)
+        self.win.phase("You should currently be {}".format(phase.name))
         self.time(phase.duration)
 
     def pause(self):
         """Pause the timer until a key is pressed"""
-        self.disp_time("Timer paused, press any key to resume.")
-        self.wait()
+        self.win.time("Timer paused, press any key to resume.")
+        self.win.wait()
 
     def time(self, length):
         """Time a length of seconds, and update the screen as it progresses.
@@ -138,9 +181,9 @@ class Timer:
             raise ValueError(
                 "Length of phase must be positive, got {}".format(length))
         for i in range(length, 0, -1):
-            self.disp_time("Time remaining: {}",
+            self.win.time("Time remaining: {}",
                 time.strftime("%M:%S", time.gmtime(i)))
-            key = self.wait(self.SECOND)
+            key = self.win.wait(self.SECOND)
             if key == 'q':  # Quit completely
                 raise ExitException
             elif key == 's':  # Skip phase
@@ -170,8 +213,9 @@ def main(stdscr):
 
 if __name__ == "__main__":
     try:
-        curses.wrapper(main)
+        with Window() as win:
+            main(win)
     except (ExitException, KeyboardInterrupt):
         pass
     finally:
-        pass
+        Window.restore()
