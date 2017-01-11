@@ -206,7 +206,7 @@ class Timer:
 def main(stdscr):
     """Create the timer, add the phases and run the timer."""
     timer = Timer(stdscr)
-    timer.add_phase("working", 20*60)
+    timer.add_phase("working", 25*60)
     timer.add_phase("resting", 5*60)
     timer.run(4)
 

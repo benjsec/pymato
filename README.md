@@ -1,7 +1,7 @@
 # Pymato Timer
 
 This is a simple timer written in python to aid with the pomodoro technique.
-It provides an alternating pattern of 20 and 5 minute periods, with an audible
+It provides an alternating pattern of 25 and 5 minute periods, with an audible
 bell after each phase. At the end of the phase the timer will not automatically
 progress to the next phase, but wait to be triggered. This avoids your break
 being used up whilst you just finish a little bit of work (or vice versa).
